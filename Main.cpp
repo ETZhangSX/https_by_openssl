@@ -71,6 +71,7 @@ void ssl_sendError(SSL* ssl);
 //#define CHK_SSL(err, s) if((err) == -1) { ERR_print_errors_fp(stderr);  return -1;}
 
 void sendHelp(FILE *fp, int *sock);
+void ssl_sendHelp(FILE *fp, SSL* ssl);
 
 void* handleEvent(void *);
 
@@ -169,13 +170,6 @@ int main() {
 	    CHK_RV(rv, "SSL_set_fd");
 	    rv = SSL_accept(ssl);
 	    CHK_RV(rv, "SSL_accpet");
-
-        // rv = SSL_read(ssl, buf, sizeof(buf) - 1);
-	    // CHK_SSL(rv, "SSL_read");
-	    // buf[rv] = '\0';
-	    // printf("Got %d chars :%s\n", rv, buf);
-	    // rv = SSL_write(ssl, "I accept your request", strlen("I accept your request"));
-	    // CHK_SSL(rv, "SSL_write");
  
 	    // close(accept_sd);
 	    // SSL_free(ssl);
@@ -608,20 +602,11 @@ void ssl_sendJPG(ssl_data* sd, char *filename) {
     fseek(fp, 0L, SEEK_SET);
 
     //循环读写，确保文件读完
-    sendHelp(fp, &client_sock);
+    ssl_sendHelp(fp, SSL* ssl);
 
+    close(client_sock);
     SSL_free(ssl);
     delete sd;
-    // while (!feof(fp)) {
-    //     fread(buffer, sizeof(char), sizeof(buffer), fp);
-    //     fwrite(buffer, sizeof(char), sizeof(buffer), fw);
-    // }
-    
-    // printf("Finish sending\n");
-
-    // fclose(fw);
-    // fclose(fp);
-    // close(client_sock);
 }
 
 void sendJPG(int *sock, char *filename) {
@@ -660,22 +645,24 @@ void sendJPG(int *sock, char *filename) {
 
 
     printf("Sending img\n");
-    // fw = fdopen(client_sock, "wb");
 
     fseek(fp, 0L, SEEK_SET);
 
     //循环读写，确保文件读完
     sendHelp(fp, sock);
-    // while (!feof(fp)) {
-    //     fread(buffer, sizeof(char), sizeof(buffer), fp);
-    //     fwrite(buffer, sizeof(char), sizeof(buffer), fw);
-    // }
-    
-    // printf("Finish sending\n");
+}
 
-    // fclose(fw);
-    // fclose(fp);
-    // close(client_sock);
+void ssl_sendHelp(FILE *fp, SSL* ssl) {
+    char buffer[buffer_size];
+
+    while (!feof(fp)) {
+        fread(buffer, sizeof(char), sizeof(buffer), fp);
+        SSL_write(ssl, buffer, sizeof(buffer));
+    }
+
+    cout << "Finish sending\n";
+    
+    fclose(fp);
 }
 
 void sendHelp(FILE *fp, int *sock) {
@@ -702,7 +689,6 @@ void ssl_sendICO(ssl_data* sd, char *filename) {
     SSL* ssl = sd->ssl;
     char buffer[buffer_size];
     FILE *fp;
-    FILE *fw;
     fp = fopen(filename, "rb");
 
     fseek(fp, 0L, SEEK_END);
@@ -721,8 +707,7 @@ void ssl_sendICO(ssl_data* sd, char *filename) {
     header += "Content-Length: ";
     header += to_string(len);
     header += "\r\n\r\n";
-    // write(client_sock, status.c_str(), status.length());
-    // write(client_sock, header.c_str(), header.length());
+
     SSL_write(ssl, status.c_str(), status.length());
     SSL_write(ssl, header.c_str(), header.length());
     
@@ -734,19 +719,18 @@ void ssl_sendICO(ssl_data* sd, char *filename) {
     }
 
     printf("Sending favicon.ico\n");
-    fw = fdopen(client_sock, "wb");
 
     fseek(fp, 0L, SEEK_SET);
 
     //循环读写，确保文件读完
     while (!feof(fp)) {
         fread(buffer, sizeof(char), sizeof(buffer), fp);
-        fwrite(buffer, sizeof(char), sizeof(buffer), fw);
+        // fwrite(buffer, sizeof(char), sizeof(buffer), fw);
+        SSL_write(ssl, buffer, sizeof(buffer));
     }
     
     printf("Finish sending\n");
 
-    fclose(fw);
     fclose(fp);
     close(client_sock);
     SSL_free(ssl);
@@ -811,6 +795,7 @@ void handleError(const string &msg) {
     exit(1);
 }
 
+//SSL version
 void ssl_sendError(SSL* ssl) {
     
     char status[] = "HTTP/1.1 400 Bad Request\r\n";
