@@ -297,10 +297,10 @@ void epollHandling(int epfd, int pos) {
         }
 
         if (t_filename == "/" || t_filename == "/home") {
-            t_filename = "./index.html";
+            t_filename = "./pages/index.html";
         }
         else {
-            t_filename = "." + t_filename;
+            t_filename = "./pages" + t_filename;
         }
 
         if (t_method != "GET") {
