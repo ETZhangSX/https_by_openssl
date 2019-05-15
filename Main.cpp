@@ -602,7 +602,7 @@ void ssl_sendJPG(ssl_data* sd, char *filename) {
     fseek(fp, 0L, SEEK_SET);
 
     //循环读写，确保文件读完
-    ssl_sendHelp(fp, SSL* ssl);
+    ssl_sendHelp(fp, ssl);
 
     close(client_sock);
     SSL_free(ssl);
