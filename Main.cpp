@@ -505,8 +505,6 @@ void ssl_sendHTML(ssl_data* sd, char *filename) {
     
     SSL_write(ssl, status, strlen(status));
     SSL_write(ssl, header, strlen(header));
-    // write(client_sock, status, strlen(status));
-    // write(client_sock, header, strlen(header));
     
     fp = fopen(filename, "r");
     if (!fp) {
